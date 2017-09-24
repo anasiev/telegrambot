@@ -7,3 +7,5 @@
 2) Проверяет команды на боте telegram, и если появилось нужное новое сообщение
 (команда "/getip"), то запрашивает на yandex внешний ip и отправляет его в
 telegramm.
+
+Библиотеки для работы с GPIO использованы с https://github.com/duxingkei33/orangepi_PC_gpio_pyH3
