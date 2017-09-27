@@ -1,5 +1,5 @@
 import requests
-import token
+import mytoken
 from time import sleep
 from bs4 import BeautifulSoup
 import os
@@ -30,7 +30,7 @@ gpio.setcfg(led, gpio.OUTPUT)
 gpio.setcfg(button, gpio.INPUT)
 
 #https://api.telegram.org/bot + token + / + method
-token = token.token
+token = mytoken.token
 global domen
 domen = 'https://api.telegram.org/bot' + token + '/'
 
