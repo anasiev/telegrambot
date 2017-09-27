@@ -4,11 +4,11 @@ from time import sleep
 from bs4 import BeautifulSoup
 import os
 import sys
-if not os.getegid() == 0:
-    sys.exit('Script must be run as root')
-
 from pyA20.gpio import gpio
 from pyA20.gpio import port
+
+if not os.getegid() == 0:
+    sys.exit('Script must be run as root')
 
 global led
 led = port.PA8
