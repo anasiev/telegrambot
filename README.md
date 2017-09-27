@@ -6,6 +6,6 @@ Manage GPIO I/O port Orange PI One (or over PI) with Telegram
 message to telegram.
 
 2) Checks message in the Telegram. 
-Command "/getip" requests yandex for the external ip and sends it to the Telegram.
+Command "/getip" requests yandex.ru/internet for the external ip and sends it to the Telegram.
 
 Orange Pi ports require a library https://github.com/duxingkei33/orangepi_PC_gpio_pyH3
