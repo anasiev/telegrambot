@@ -1,9 +1,10 @@
 import requests
 import misc
 from time import sleep
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 import os
 import sys
+from datetime import datetime, date, time
 if not os.getegid() == 0:
     sys.exit('Script must be run as root')
 
@@ -69,14 +70,29 @@ def send_message(chat_id, text = 'Wait a second, please...'):
 	requests.get(url)
 
 def get_ip():
-	url = "https://yandex.ru/internet/"
-	result = requests.get(url)
-	if result.status_code == 200:
-		html = result.content
-		soup = BeautifulSoup(html, 'html.parser')
-		ip= soup.find("li", attrs={"class": "client__item client__item_type_ipv4"}).find('div').text
-		return ip
-	return None
+	#url = "https://yandex.ru/internet/"
+	#result = requests.get(url)
+	#if result.status_code == 200:
+	#	html = result.content
+	#	soup = BeautifulSoup(html, 'html.parser')
+	#	ip= soup.find("li", attrs={"class": "client__item client__item_type_ipv4"}).find('div').text
+	#	return ip
+	#return None
+	with requests.Session() as sess:
+		r= sess.get(misc.statusUrl, auth=(misc.login, misc.psw))
+		if r.status_code==200:
+			s = r.text
+			posMac= s.find(misc.mac)
+			posstartIp = posMac+21
+			posEndIp = s.find("\"",posstartIp, posstartIp+16)
+			return s[posstartIp:posEndIp:1]
+
+def changeIp():
+
+	requests.get(misc.DisconnectUrl, auth=(misc.login, misc.psw))
+	sleep(6)
+	requests.get(misc.ConnectUrl, auth=(misc.login, misc.psw))
+	sleep(6)
 
 def change_led_state():
 	try:
@@ -120,13 +136,19 @@ def main ():
 			if text == '/led':
 				change_led_state()
 
+			if text == '/changeip':
+				changeIp()
+
 		get_button_state()
 		if button_state != None and button_state != last_button_state:
 			send_message(chat_id, str(button_state))
 			last_button_state = button_state
 			print(str(button_state))
 
-		sleep(5)
+		with open('bot.log', 'at') as f:
+			text = print(datetime.now())
+			f.write(str(text) + '\n')
+		sleep(10)
 
 
 if __name__ == "__main__":
