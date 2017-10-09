@@ -1,11 +1,11 @@
-# telegrambot
+# TelegramBot
 
-Написан для Orange Pi One в качестве проверки совместной работы GPIO и Telegramm. 
-1) Проверяет статус (1/0) порта ввода PA7, и если статус поменялся, то отправляет
-статус в telegram.
+Manage GPIO I/O port Orange PI One (or over PI) with Telegram
 
-2) Проверяет команды на боте telegram, и если появилось нужное новое сообщение
-(команда "/getip"), то запрашивает на yandex внешний ip и отправляет его в
-telegramm.
+1) Checks the status of the PA7 (for example) input port (1/0). If the status has changed, sends
+message to telegram.
 
-Библиотеки для работы с GPIO использованы с https://github.com/duxingkei33/orangepi_PC_gpio_pyH3
+2) Checks message in the Telegram. 
+Command "/getip" requests yandex.ru/internet for the external ip and sends it to the Telegram.
+
+Orange Pi ports require a library https://github.com/duxingkei33/orangepi_PC_gpio_pyH3

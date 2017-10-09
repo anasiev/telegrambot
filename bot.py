@@ -1,5 +1,5 @@
 import requests
-import misc
+import mytoken
 from time import sleep
 #from bs4 import BeautifulSoup
 import os
@@ -7,9 +7,11 @@ import sys
 from datetime import datetime, date, time
 if not os.getegid() == 0:
     sys.exit('Script must be run as root')
-
 from pyA20.gpio import gpio
 from pyA20.gpio import port
+
+if not os.getegid() == 0:
+    sys.exit('Script must be run as root')
 
 global led
 led = port.PA8
@@ -31,7 +33,7 @@ gpio.setcfg(led, gpio.OUTPUT)
 gpio.setcfg(button, gpio.INPUT)
 
 #https://api.telegram.org/bot + token + / + method
-token = misc.token
+token = mytoken.token
 global domen
 domen = 'https://api.telegram.org/bot' + token + '/'
 
