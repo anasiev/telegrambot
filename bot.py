@@ -156,9 +156,9 @@ def main ():
 			last_button_state = button_state
 			print(str(button_state))
 
-		with open('bot.log', 'at') as f:
-			text = print(datetime.now())
-			f.write(str(text) + '\n')
+		#with open('bot.log', 'at') as f:
+		#	text = print(datetime.now())
+		#	f.write(str(text) + '\n')
 		sleep(10)
 
 
