@@ -1,5 +1,6 @@
 import requests
-import misc 
+import misc
+#import json
 
 #misc.py - personal info
 #token = '*****'
@@ -58,7 +59,7 @@ def get_message():
 	#ожидание ответа telegram, проверяем на OK
 	if data['ok'] == True:
 		#проверка - если в телеграме есть запрос
-		if len(data['result']) > 0:
+		if len(data['result']) >0:
 			#берем последний запрос
 			last_object = data['result'][-1]
 			#проверяем, обрабатывали ли уже этот запрос (не повторяется
@@ -67,8 +68,8 @@ def get_message():
 			global last_update_id
 			if last_update_id != current_update_id:
 				last_update_id = current_update_id
-				chat_id = last_object['message']['chat']['id']
 				message_text = last_object['message']['text']
+				chat_id = last_object['message']['chat']['id']
 				message = {'chat_id':chat_id, 'text':message_text}
 				return message
 			return None
@@ -129,16 +130,11 @@ def main ():
 	print ('Bot is started')
 	global button_state
 	last_button_state=0
-	chat_id = int(0)
-	while chat_id == int(0):
-		answer=get_message()
-		if answer is not None:
-			chat_id = answer['chat_id']
-			print(chat_id)
 
 	while True:
 		answer = get_message()
 		if answer is not None:
+			chat_id = answer['chat_id']
 			text = answer['text']
 			if text == '/getip':
 				server_ip = get_ip()
