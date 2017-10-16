@@ -1,5 +1,6 @@
 import requests
 import misc
+#import logging
 #import json
 
 #misc.py - personal info
@@ -43,21 +44,28 @@ gpio.setcfg(led, gpio.OUTPUT)
 gpio.setcfg(button, gpio.INPUT)
 
 #https://api.telegram.org/bot + token + / + method
-token = misc.token
-global domen
-domen = 'https://api.telegram.org/bot' + token + '/'
 
 def get_updates():
+	domen = 'https://api.telegram.org/bot' + misc.token + '/'
 	url = domen + 'getupdates'
-	r = requests.get(url)
-	return r.json()
+	try:
+		r = requests.get(url)
+		return r.json()
+	except:
+		save_err('get updates')
+		return None
 
+
+def save_err(Ex):
+	with open('/home/john/telegram/bot_except.log','at') as file:
+		now = datetime.now()
+		file.write(Ex+'_'+str(now)+'\n')
 
 def get_message():
 	#получение запроса в телеграмм
 	data = get_updates()
 	#ожидание ответа telegram, проверяем на OK
-	if data['ok'] == True:
+	if data!=None and data['ok'] == True:
 		#проверка - если в телеграме есть запрос
 		if len(data['result']) >0:
 			#берем последний запрос
@@ -76,10 +84,13 @@ def get_message():
 	return None
 
 
-def send_message(chat_id, text = 'Wait a second, please...'):
-	global domen
+def send_message(chat_id, text):
+	domen = 'https://api.telegram.org/bot' + misc.token + '/'
 	url = domen + 'sendmessage?chat_id={}&text={}'.format(chat_id, text)
-	requests.get(url)
+	try:
+		requests.get(url)
+	except:
+		save_err('send message')
 
 def get_ip():
 	#url = "https://yandex.ru/internet/"
@@ -90,29 +101,33 @@ def get_ip():
 	#	ip= soup.find("li", attrs={"class": "client__item client__item_type_ipv4"}).find('div').text
 	#	return ip
 	#return None
-	with requests.Session() as sess:
-		r= sess.get(misc.statusUrl, auth=(misc.login, misc.psw))
-		if r.status_code==200:
-			s = r.text
-			posMac= s.find(misc.mac)
-			posstartIp = posMac+21
-			posEndIp = s.find("\"",posstartIp, posstartIp+16)
-			return s[posstartIp:posEndIp:1]
-
+	try:
+		with requests.Session() as sess:
+			r= sess.get(misc.statusUrl, auth=(misc.login, misc.psw))
+			if r.status_code==200:
+				s = r.text
+				posMac= s.find(misc.mac)
+				posstartIp = posMac+21
+				posEndIp = s.find("\"",posstartIp, posstartIp+16)
+				return s[posstartIp:posEndIp:1]
+	except:
+		save_err('get_ip')
+	
 def changeIp():
-
-	requests.get(misc.DisconnectUrl, auth=(misc.login, misc.psw))
-	sleep(6)
-	requests.get(misc.ConnectUrl, auth=(misc.login, misc.psw))
-	sleep(6)
-
+	try:
+		requests.get(misc.DisconnectUrl, auth=(misc.login, misc.psw))
+		sleep(6)
+		requests.get(misc.ConnectUrl, auth=(misc.login, misc.psw))
+		sleep(6)
+	except:
+		save_err('change ip')
 def change_led_state():
 	try:
 		global led_state
 		led_state = not led_state
 		gpio.output(led, led_state)
 	except:
-		pass
+		save_err('led')
 
 def get_button_state():
 	try:
@@ -121,8 +136,7 @@ def get_button_state():
 		button_state = gpio.input(button)
 		return button_state
 	except:
-		pass
-		return None
+		save_err('button')
 
 def main ():
 	# with open('updates.json','w') as file:
@@ -138,7 +152,7 @@ def main ():
 			text = answer['text']
 			if text == '/getip':
 				server_ip = get_ip()
-				if server_ip is not None:
+				if server_ip is not None:	
 					send_message(chat_id, server_ip)
 			if text == '/led':
 				change_led_state()
