@@ -1,14 +1,18 @@
+#python3
+
 import requests
-import misc
 #import logging
 #import json
 
+import misc
 #misc.py - personal info
 #token = '*****'
+#domen ='https://api.telegram.org/bot' + token + '/'
 #login = '*****'
 #psw = '*******'
 #routerIp = 'http://192.168.1.1'
-#mac ='********'
+#mac ='*******'
+#for router TPLINK-741N
 #statusUrl = routerIp + '/userRpm/StatusRpm.htm'
 #DisconnectUrl = routerIp + '/userRpm/StatusRpm.htm?Disconnect=Disconnect&wan=1'
 #ConnectUrl = routerIp + '/userRpm/StatusRpm.htm?Connect=Connect&wan=1'
@@ -17,6 +21,7 @@ from time import sleep
 import os
 import sys
 from datetime import datetime, date, time
+import cv2
 
 if not os.getegid() == 0:
     sys.exit('Script must be run as root')
@@ -43,11 +48,8 @@ gpio.init()
 gpio.setcfg(led, gpio.OUTPUT)
 gpio.setcfg(button, gpio.INPUT)
 
-#https://api.telegram.org/bot + token + / + method
-
 def get_updates():
-	domen = 'https://api.telegram.org/bot' + misc.token + '/'
-	url = domen + 'getupdates'
+	url = misc.domen + 'getupdates'
 	try:
 		r = requests.get(url)
 		return r.json()
@@ -57,21 +59,20 @@ def get_updates():
 
 
 def save_err(Ex):
-	with open('/home/john/telegram/bot_except.log','at') as file:
+	with open('bot_except.log','at') as file:
 		now = datetime.now()
 		file.write(Ex+'_'+str(now)+'\n')
 
 def get_message():
-	#получение запроса в телеграмм
+	#get message from telegram
 	data = get_updates()
-	#ожидание ответа telegram, проверяем на OK
+	#if OK
 	if data!=None and data['ok'] == True:
-		#проверка - если в телеграме есть запрос
+		#check result
 		if len(data['result']) >0:
-			#берем последний запрос
+			#last result
 			last_object = data['result'][-1]
-			#проверяем, обрабатывали ли уже этот запрос (не повторяется
-			#ли)
+			#check unicum
 			current_update_id = last_object['update_id']
 			global last_update_id
 			if last_update_id != current_update_id:
@@ -85,12 +86,32 @@ def get_message():
 
 
 def send_message(chat_id, text):
-	domen = 'https://api.telegram.org/bot' + misc.token + '/'
-	url = domen + 'sendmessage?chat_id={}&text={}'.format(chat_id, text)
+	url = misc.domen + 'sendmessage?chat_id={}&text={}'.format(chat_id, text)
 	try:
 		requests.get(url)
 	except:
 		save_err('send message')
+
+def send_photo(chat_id):
+	#get photo from webcamera
+	camera = cv2.VideoCapture(0)
+	retval, photo = camera.read()
+	#save  photo
+	imagePath = 'image.png'
+	cv2.imwrite(imagePath, photo)
+	del(camera)
+
+
+	#sendPhoto
+	url = misc.domen + 'sendPhoto'
+	data = {'chat_id': chat_id}
+	files = {'photo': (imagePath, open(imagePath, "rb"))}
+
+	try:
+		requests.post(url, data=data, files=files)
+		close(imagePath)
+	except:
+		save_err('send photo')
 
 def get_ip():
 	#url = "https://yandex.ru/internet/"
@@ -112,7 +133,7 @@ def get_ip():
 				return s[posstartIp:posEndIp:1]
 	except:
 		save_err('get_ip')
-	
+
 def changeIp():
 	try:
 		requests.get(misc.DisconnectUrl, auth=(misc.login, misc.psw))
@@ -144,6 +165,7 @@ def main ():
 	print ('Bot is started')
 	global button_state
 	last_button_state=0
+	global led_state
 
 	while True:
 		answer = get_message()
@@ -152,13 +174,18 @@ def main ():
 			text = answer['text']
 			if text == '/getip':
 				server_ip = get_ip()
-				if server_ip is not None:	
+				if server_ip is not None:
 					send_message(chat_id, server_ip)
 			if text == '/led':
 				change_led_state()
+				send_message(chat_id,str(led_state))
 
 			if text == '/changeip':
 				changeIp()
+
+			if text == '/sendphoto':
+				send_photo(chat_id)
+
 
 		get_button_state()
 		if button_state != None and button_state != last_button_state:
