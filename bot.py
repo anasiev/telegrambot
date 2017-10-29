@@ -3,6 +3,7 @@
 import requests
 #import logging
 #import json
+from pprint import pprint
 
 import misc
 #misc.py - personal info
@@ -53,7 +54,7 @@ def get_updates():
 	try:
 		r = requests.get(url)
 		return r.json()
-	except:
+	except Exceptions:
 		save_err('get updates')
 		return None
 
@@ -89,29 +90,39 @@ def send_message(chat_id, text):
 	url = misc.domen + 'sendmessage?chat_id={}&text={}'.format(chat_id, text)
 	try:
 		requests.get(url)
-	except:
+	except Exceptions:
 		save_err('send message')
 
 def send_photo(chat_id):
+
 	#get photo from webcamera
-	camera = cv2.VideoCapture(0)
-	retval, photo = camera.read()
-	#save  photo
-	imagePath = 'image.png'
-	cv2.imwrite(imagePath, photo)
-	del(camera)
-
-
-	#sendPhoto
-	url = misc.domen + 'sendPhoto'
-	data = {'chat_id': chat_id}
-	files = {'photo': (imagePath, open(imagePath, "rb"))}
+	camera = cv2.VideoCapture(-1)
 
 	try:
-		requests.post(url, data=data, files=files)
-		close(imagePath)
-	except:
-		save_err('send photo')
+		ret, photo = camera.read()
+		if photo != None:
+			#save  photo
+			imagePath = 'image.png'
+			cv2.imwrite(imagePath, photo)
+			del(camera)
+
+			#sendPhoto
+			url = misc.domen + 'sendPhoto'
+			data = {'chat_id': chat_id}
+			files = {'photo': (imagePath, open(imagePath, "rb"))}
+
+			try:
+				requests.post(url, data=data, files=files)
+				close(imagePath)
+			except Exceptions:
+				save_err('send photo')
+				send_message(chat_id, 'Err send photo')
+		else:
+			send_message(chat_id,'Photo size = 0')
+
+	except Exceptions:
+		save_err('read camera')
+		send_message(chat_id,'Camera err')
 
 def get_ip():
 	#url = "https://yandex.ru/internet/"
@@ -131,7 +142,7 @@ def get_ip():
 				posstartIp = posMac+21
 				posEndIp = s.find("\"",posstartIp, posstartIp+16)
 				return s[posstartIp:posEndIp:1]
-	except:
+	except Exceptions:
 		save_err('get_ip')
 
 def changeIp():
@@ -140,14 +151,14 @@ def changeIp():
 		sleep(6)
 		requests.get(misc.ConnectUrl, auth=(misc.login, misc.psw))
 		sleep(6)
-	except:
+	except Exceptions:
 		save_err('change ip')
 def change_led_state():
 	try:
 		global led_state
 		led_state = not led_state
 		gpio.output(led, led_state)
-	except:
+	except Exceptions:
 		save_err('led')
 
 def get_button_state():
@@ -182,6 +193,9 @@ def main ():
 
 			if text == '/changeip':
 				changeIp()
+				server_ip = get_ip()
+				if server_ip is not None:
+					send_message(chat_id, 'new ip = ' + server_ip)
 
 			if text == '/sendphoto':
 				send_photo(chat_id)
