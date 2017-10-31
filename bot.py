@@ -4,7 +4,9 @@ import requests
 #import logging
 #import json
 from pprint import pprint
-
+import re
+from subprocess import Popen, PIPE
+from bs4 import BeautifulSoup
 import misc
 #misc.py - personal info
 #token = '*****'
@@ -54,7 +56,7 @@ def get_updates():
 	try:
 		r = requests.get(url)
 		return r.json()
-	except Exceptions:
+	except Exception:
 		save_err('get updates')
 		return None
 
@@ -90,7 +92,7 @@ def send_message(chat_id, text):
 	url = misc.domen + 'sendmessage?chat_id={}&text={}'.format(chat_id, text)
 	try:
 		requests.get(url)
-	except Exceptions:
+	except Exception:
 		save_err('send message')
 
 def send_photo(chat_id):
@@ -114,36 +116,36 @@ def send_photo(chat_id):
 			try:
 				requests.post(url, data=data, files=files)
 				close(imagePath)
-			except Exceptions:
+			except Exception:
 				save_err('send photo')
 				send_message(chat_id, 'Err send photo')
 		else:
 			send_message(chat_id,'Photo size = 0')
 
-	except Exceptions:
+	except Exception:
 		save_err('read camera')
 		send_message(chat_id,'Camera err')
 
 def get_ip():
-	#url = "https://yandex.ru/internet/"
-	#result = requests.get(url)
-	#if result.status_code == 200:
-	#	html = result.content
-	#	soup = BeautifulSoup(html, 'html.parser')
-	#	ip= soup.find("li", attrs={"class": "client__item client__item_type_ipv4"}).find('div').text
-	#	return ip
-	#return None
-	try:
-		with requests.Session() as sess:
-			r= sess.get(misc.statusUrl, auth=(misc.login, misc.psw))
-			if r.status_code==200:
-				s = r.text
-				posMac= s.find(misc.mac)
-				posstartIp = posMac+21
-				posEndIp = s.find("\"",posstartIp, posstartIp+16)
-				return s[posstartIp:posEndIp:1]
-	except Exceptions:
-		save_err('get_ip')
+	url = "https://yandex.ru/internet/"
+	result = requests.get(url)
+	if result.status_code == 200:
+		html = result.content
+		soup = BeautifulSoup(html, 'html.parser')
+		ip= soup.find("li", attrs={"class": "client__item client__item_type_ipv4"}).find('div').text
+		return ip
+	return None
+	#try:
+	#	with requests.Session() as sess:
+	#		r= sess.get(misc.statusUrl, auth=(misc.login, misc.psw))
+	#		if r.status_code==200:
+	#			s = r.text
+	#			posMac= s.find(misc.mac)
+	#			posstartIp = posMac+21
+	#			posEndIp = s.find("\"",posstartIp, posstartIp+16)
+	#			return s[posstartIp:posEndIp:1]
+	#except Exception:
+	#	save_err('get_ip')
 
 def changeIp():
 	try:
@@ -151,14 +153,14 @@ def changeIp():
 		sleep(6)
 		requests.get(misc.ConnectUrl, auth=(misc.login, misc.psw))
 		sleep(6)
-	except Exceptions:
+	except Exception:
 		save_err('change ip')
 def change_led_state():
 	try:
 		global led_state
 		led_state = not led_state
 		gpio.output(led, led_state)
-	except Exceptions:
+	except Exception:
 		save_err('led')
 
 def get_button_state():
@@ -167,8 +169,34 @@ def get_button_state():
 		global button_state
 		button_state = gpio.input(button)
 		return button_state
-	except:
+	except Exception:
 		save_err('button')
+
+def ping_url(url):
+	p = Popen(['ping', '-c 1', url], stdout=PIPE, stderr=None)
+	pingline=''
+	while True:
+		line = p.stdout.readline()
+		pingline+=str(line)
+		if not line:
+			break
+	pingline = re.search(r', 0% packet loss,',pingline)
+	pingstatus= bool(pingline)
+	return pingstatus
+
+def check_yota_connections():
+	activate_url = 'http://hello.yota.ru/php/go.php'
+	headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.75 Safari/537.36'}
+	while True:
+		payload = {'accept_lte':'1', 'redirurl': 'http://www.yota.ru/','city':'khab','connection_type':'light','service_id':'Sliders_Free_Temp'}
+		try:
+			inetstat = pyPing.ping(testurl1)
+			if inetstat is False:
+				with requests.Session() as s:
+					s.post(activate_url, headers=headers, timeout=(10, 10), data=payload)
+		except Exception:
+			save_err ('yota_activate_light')
+
 
 def main ():
 	# with open('updates.json','w') as file:
@@ -177,7 +205,7 @@ def main ():
 	global button_state
 	last_button_state=0
 	global led_state
-
+	loop = 0
 	while True:
 		answer = get_message()
 		if answer is not None:
@@ -199,6 +227,8 @@ def main ():
 
 			if text == '/sendphoto':
 				send_photo(chat_id)
+			if text =='/ping':
+				send_message(chat_id, str(ping_url('ya.ru')))
 
 
 		get_button_state()
@@ -211,6 +241,11 @@ def main ():
 		#	text = print(datetime.now())
 		#	f.write(str(text) + '\n')
 		sleep(10)
+		# loop about 60second
+		loop+=1
+		if loop >= 6:
+			check_yota_connections()
+			loop = 0
 
 
 if __name__ == "__main__":
