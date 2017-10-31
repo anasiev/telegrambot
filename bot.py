@@ -65,6 +65,7 @@ def save_err(Ex):
 	with open('bot_except.log','at') as file:
 		now = datetime.now()
 		file.write(Ex+'_'+str(now)+'\n')
+	sleep(1)
 
 def get_message():
 	#get message from telegram
@@ -190,7 +191,7 @@ def check_yota_connections():
 	while True:
 		payload = {'accept_lte':'1', 'redirurl': 'http://www.yota.ru/','city':'khab','connection_type':'light','service_id':'Sliders_Free_Temp'}
 		try:
-			inetstat = pyPing.ping(testurl1)
+			inetstat = ping_url('ya.ru')
 			if inetstat is False:
 				with requests.Session() as s:
 					s.post(activate_url, headers=headers, timeout=(10, 10), data=payload)
